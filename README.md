@@ -8,17 +8,25 @@ RESTful API for managing employees with Laravel and Laravel Sanctum authenticati
 ## Quick Start
 
 ### 1. Setup
+Requires Docker (Compose v2). PHP on the host is not needed.
+
 ```bash
 git clone <repository-url>
-cd primeo
-composer install
+cd Recruitment-Task__Primeo
+cp .env.example .env   # already configured for Sail; set WWWUSER/WWWGROUP to `id -u`/`id -g` if not 1000
+
+# install dependencies (no local PHP 8.2+ required)
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd)":/app -w /app composer:2 install --ignore-platform-reqs
 ```
 
 ```bash
 ./vendor/bin/sail up -d
-./vendor/bin/sail artisan migrate:fresh --seed
+./vendor/bin/sail artisan key:generate
+./vendor/bin/sail artisan migrate:fresh --seed   # if it fails with a DB connection error, wait a few seconds for MySQL and retry
 ./vendor/bin/sail artisan scribe:generate
 ```
+
+If you change `DB_*` values after the first `sail up`, recreate the volume: `./vendor/bin/sail down -v`.
 
 ### 2. Test Accounts
 - **Active**: `active@example.com` / `password123` (can login)
@@ -37,7 +45,7 @@ composer install
 # Run specific test file
 ./vendor/bin/sail artisan test tests/Feature/AuthLoginTest.php
 
-# Run with coverage
+# Run with coverage (needs Xdebug: set SAIL_XDEBUG_MODE=coverage in .env and restart Sail)
 ./vendor/bin/sail artisan test --coverage
 ```
 
@@ -102,7 +110,7 @@ curl -X GET http://localhost/api/me \
 ./vendor/bin/sail artisan scribe:generate
 
 # View logs
-./vendor/bin/sail artisan tail
+./vendor/bin/sail artisan pail
 ```
 
 ## Troubleshooting
