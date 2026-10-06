@@ -1,82 +1,69 @@
-# Employee Management
+# Recruitment Task: Primeo
 
-RESTful API for managing employees with Laravel and Laravel Sanctum authentication.
+[![CI](https://github.com/gander/Recruitment-Task__Primeo/actions/workflows/laravel.yml/badge.svg)](https://github.com/gander/Recruitment-Task__Primeo/actions/workflows/laravel.yml)
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/gander/Employee-Management/laravel.yml?branch=master&style=flat&logo=laravel&logoColor=white&label=test)
-[![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
+Zadanie: RESTful API do zarządzania pracownikami (Laravel, Laravel Sanctum). Publiczna lista pracowników z filtrowaniem, sortowaniem i paginacją, logowanie tokenem Bearer, reset hasła oraz chronione operacje CRUD i usuwanie zbiorcze. Dokumentacja API jest generowana przez Scribe, a testy napisane w PHPUnit.
 
-## Quick Start
+## Requirements
 
-### 1. Setup
-Requires Docker (Compose v2). PHP on the host is not needed.
+- Docker Engine z Docker Compose v2 (jedyna zależność; PHP ani Composer na hoście nie są potrzebne).
+- `curl` do przykładów użycia.
+
+## Install
 
 ```bash
-git clone <repository-url>
-cd Recruitment-Task__Primeo
-cp .env.example .env   # already configured for Sail; set WWWUSER/WWWGROUP to `id -u`/`id -g` if not 1000
-
-# install dependencies (no local PHP 8.2+ required)
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd)":/app -w /app composer:2 install --ignore-platform-reqs
+docker compose up --build -d --wait
+curl --retry 30 --retry-all-errors --retry-delay 2 -f http://localhost:8080/api/employees
 ```
 
-```bash
-./vendor/bin/sail up -d
-./vendor/bin/sail artisan key:generate
-./vendor/bin/sail artisan migrate:fresh --seed   # if it fails with a DB connection error, wait a few seconds for MySQL and retry
-./vendor/bin/sail artisan scribe:generate
-```
+Kontener przy starcie wykonuje `migrate:fresh --seed` i `scribe:generate`, więc pierwsza odpowiedź może potrwać kilka sekund.
 
-If you change `DB_*` values after the first `sail up`, recreate the volume: `./vendor/bin/sail down -v`.
+## Usage
 
-### 2. Test Accounts
-- **Active**: `active@example.com` / `password123` (can login)
-- **Inactive**: `inactive@example.com` / `password123` (login blocked)
+- Dokumentacja: <http://localhost:8080/docs>
+- Base URL: <http://localhost:8080/api>
 
-### 3. API Documentation
-- Interactive docs: `http://localhost/docs`
-- Base URL: `http://localhost/api`
+### Konta testowe
 
-## Testing with PHPUnit
+- **Active**: `active@example.com` / `password123` (może się zalogować)
+- **Inactive**: `inactive@example.com` / `password123` (logowanie zablokowane)
+
+### Logowanie i chroniony endpoint
 
 ```bash
-# Run all tests
-./vendor/bin/sail artisan test
-
-# Run specific test file
-./vendor/bin/sail artisan test tests/Feature/AuthLoginTest.php
-
-# Run with coverage (needs Xdebug: set SAIL_XDEBUG_MODE=coverage in .env and restart Sail)
-./vendor/bin/sail artisan test --coverage
-```
-
-## Testing with Postman
-
-### 1. Import Collections
-1. Import `postman/Employee_Management_API.postman_collection.json`
-2. Import `postman/Employee_Management_Environment.postman_environment.json`
-3. Set environment as active
-
-### 2. Run Tests
-- **Individual**: Start with "Login - Active Employee" to set token
-- **Collection**: Right-click → "Run collection"
-
-## Manual Testing
-
-### 1. Get Token
-```bash
-curl -X POST http://localhost/api/auth/login \
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "active@example.com", "password": "password123"}'
+  -d '{"email": "active@example.com", "password": "password123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')
+curl -s http://localhost:8080/api/me -H "Authorization: Bearer $TOKEN"
 ```
 
-### 2. Test Endpoints
-```bash
-# Public endpoint
-curl "http://localhost/api/employees"
+## Test
 
-# Protected endpoint (replace TOKEN)
-curl -X GET http://localhost/api/me \
-  -H "Authorization: Bearer TOKEN"
+```bash
+docker compose run --rm --no-deps -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: app sh -c 'touch .env && php artisan test'
+```
+
+Collection Postman: `postman/Employee_Management_API.postman_collection.json` i `postman/Employee_Management_Environment.postman_environment.json`.
+
+## Override
+
+Lokalne zmiany (np. montowanie kodu do kontenera) trzymaj w `compose.override.yml`, ignorowanym przez git:
+
+```bash
+cat > compose.override.yml <<'OVERRIDE'
+services:
+  app:
+    volumes:
+      - .:/app
+OVERRIDE
+docker compose up --build -d --wait
+```
+
+## Cleanup
+
+```bash
+docker compose down -v --rmi local --remove-orphans
+rm -f compose.override.yml
 ```
 
 ## Key Endpoints
@@ -97,51 +84,7 @@ curl -X GET http://localhost/api/me \
 - `DELETE /api/employees/bulk` - Bulk delete
 - `GET /api/me` - Current user info
 
-## Development Commands
-
-```bash
-# Reset database with test data
-./vendor/bin/sail artisan migrate:fresh --seed
-
-# Check code style
-./vendor/bin/sail composer ecs
-
-# Generate API docs
-./vendor/bin/sail artisan scribe:generate
-
-# View logs
-./vendor/bin/sail artisan pail
-```
-
-## Troubleshooting
-
-```bash
-# Restart containers
-./vendor/bin/sail down && ./vendor/bin/sail up -d
-
-# Clear caches
-./vendor/bin/sail artisan optimize:clear
-
-# Check container status
-./vendor/bin/sail ps
-```
-
 ## License
 
 All content in this repository is licensed under a
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
-
-[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
-
-[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
-[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
-[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
-
-## Architecture
-
-- **Framework**: Laravel 12.x
-- **Authentication**: Laravel Sanctum (API tokens)
-- **Database**: MySQL with Eloquent ORM
-- **Documentation**: Scribe
-- **Testing**: PHPUnit + Postman
-- **Code Style**: Easy Coding Standard (ECS)
