@@ -13,7 +13,7 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/employees', [EmployeeController::class, 'store']);
     Route::delete('/employees/bulk', [EmployeeController::class, 'bulkDestroy']);
     Route::get('/employees/{employee}', [EmployeeController::class, 'show']);
