@@ -1,6 +1,11 @@
+# Opt-in: enable with "lefthook install". Runs inside Docker, nothing is required on the host.
 pre-commit:
   commands:
+    rector:
+      glob: "*.php"
+      run: docker compose run --rm --no-deps --user "$(id -u):$(id -g)" -v "$PWD":/app app vendor/bin/rector process --dry-run
+      fail_text: "Rector found changes. Apply them: docker compose run --rm --no-deps --user \"$(id -u):$(id -g)\" -v \"$PWD\":/app app vendor/bin/rector process"
     ecs:
-      run: composer ecs
-      fail_text: "ECS found code style issues. Run 'composer ecs-fix' to fix them automatically."
-      stage_fixed: true
+      glob: "*.php"
+      run: docker compose run --rm --no-deps --user "$(id -u):$(id -g)" -v "$PWD":/app app vendor/bin/ecs check
+      fail_text: "ECS found code style issues. Fix them: docker compose run --rm --no-deps --user \"$(id -u):$(id -g)\" -v \"$PWD\":/app app vendor/bin/ecs check --fix"
