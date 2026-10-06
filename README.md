@@ -1,6 +1,6 @@
 # Recruitment Task: Primeo
 
-[![CI](https://github.com/gander/Recruitment-Task__Primeo/actions/workflows/laravel.yml/badge.svg)](https://github.com/gander/Recruitment-Task__Primeo/actions/workflows/laravel.yml)
+[![CI](https://github.com/gander/Recruitment-Task__Primeo/actions/workflows/ci.yml/badge.svg)](https://github.com/gander/Recruitment-Task__Primeo/actions/workflows/ci.yml)
 
 Zadanie: RESTful API do zarządzania pracownikami (Laravel, Laravel Sanctum). Publiczna lista pracowników z filtrowaniem, sortowaniem i paginacją, logowanie tokenem Bearer, reset hasła oraz chronione operacje CRUD i usuwanie zbiorcze. Dokumentacja API jest generowana przez Scribe, a testy napisane w PHPUnit.
 

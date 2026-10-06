@@ -2,12 +2,35 @@ name: CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [master]
   pull_request:
-    branches: [ "master" ]
 
 jobs:
-  ci:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      - run: composer validate --strict
+      - run: composer audit
+        continue-on-error: true
+      - run: docker compose config -q
+
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+      - run: composer check
+
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,10 +39,6 @@ jobs:
           php-version: '8.2'
           extensions: pdo, sqlite, pdo_sqlite
           tools: composer:v2
-      - run: composer validate --strict
-      - run: composer audit
-        continue-on-error: true
-      - run: docker compose config -q
       - name: Install dependencies
         run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist
       - name: Prepare environment
@@ -31,3 +50,15 @@ jobs:
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
         run: php artisan test
+
+  outdated:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+      - run: vendor/bin/swiss-knife breakpoint
