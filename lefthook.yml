@@ -9,3 +9,7 @@ pre-commit:
       glob: "*.php"
       run: docker compose run --rm --no-deps --user "$(id -u):$(id -g)" -v "$PWD":/app app vendor/bin/ecs check
       fail_text: "ECS found code style issues. Fix them: docker compose run --rm --no-deps --user \"$(id -u):$(id -g)\" -v \"$PWD\":/app app vendor/bin/ecs check --fix"
+    swiss-knife-breakpoint:
+      glob: "composer.{json,lock}"
+      run: docker compose run --rm --no-deps --user "$(id -u):$(id -g)" -e COMPOSER_HOME=/tmp/composer -v "$PWD":/app app vendor/bin/swiss-knife breakpoint
+      fail_text: "Too many packages are outdated by a major version. Review them: docker compose run --rm --no-deps --user \"$(id -u):$(id -g)\" -e COMPOSER_HOME=/tmp/composer -v \"$PWD\":/app app composer outdated --major-only"
