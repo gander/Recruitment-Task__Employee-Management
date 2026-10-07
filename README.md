@@ -28,6 +28,10 @@ On start the container runs `migrate:fresh --seed` and `scribe:generate`, so the
 - **Active**: `active@example.com` / `password123` (can log in)
 - **Inactive**: `inactive@example.com` / `password123` (login blocked)
 
+### Filtering
+
+`GET /api/employees?filter[full_name]=...` (also `email`, `position`, `is_active`) and `sort=-created_at` are supported. The database is SQLite, so text filters ignore letter case only for ASCII: `john` finds `John Doe`, but `łukasz` does not find `Łukasz` (use the exact case for non-ASCII letters).
+
 ### Login and a protected endpoint
 
 ```bash
