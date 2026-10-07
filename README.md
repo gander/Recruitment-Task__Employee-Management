@@ -13,20 +13,25 @@ Task: a RESTful API for managing employees (Laravel, Laravel Sanctum). It provid
 
 ```bash
 docker compose up --build -d --wait
-curl --retry 30 --retry-all-errors --retry-delay 2 -f http://localhost:8080/api/employees
 ```
 
-On start the container runs `migrate:fresh --seed` and `scribe:generate`, so the first response may take a few seconds.
+On start the container creates the SQLite database, runs `migrate:fresh --seed` and `scribe:generate`, so the first response may take a few seconds.
 
 ## Usage
 
 - Documentation: <http://localhost:8080/docs>
 - Base URL: <http://localhost:8080/api>
 
+```bash
+curl --retry 30 --retry-all-errors --retry-delay 2 -f http://localhost:8080/api/employees
+```
+
+Expected response, status 200: a JSON page of employees (`current_page`, `data`, `per_page`, `total`, ...).
+
 ### Test accounts
 
 - **Active**: `active@example.com` / `password123` (can log in)
-- **Inactive**: `inactive@example.com` / `password123` (login blocked)
+- **Inactive**: `inactive@example.com` / `password123` (login blocked, status 401)
 
 ### Filtering
 
@@ -41,13 +46,43 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
 curl -s http://localhost:8080/api/me -H "Authorization: Bearer $TOKEN"
 ```
 
+Expected response of the second request, status 200: the logged-in employee, e.g. `{"id":1,"full_name":"Active Employee","email":"active@example.com", ...}`.
+
+### Key endpoints
+
+Public:
+- `GET /api/employees` - List employees (with filtering, sorting, pagination)
+
+Authentication:
+- `POST /api/auth/login` - Login
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password` - Reset password
+
+Protected (require Bearer token):
+- `POST /api/employees` - Create employee
+- `GET /api/employees/{id}` - Get employee details
+- `PUT /api/employees/{id}` - Update employee
+- `DELETE /api/employees/{id}` - Delete employee
+- `DELETE /api/employees/bulk` - Bulk delete
+- `GET /api/me` - Current user info
+
 ## Test
 
+Run the whole test suite (PHPUnit) in Docker:
+
 ```bash
-docker compose run --rm --no-deps -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: app sh -c 'touch .env && php artisan test'
+docker compose run --rm --build --no-deps -e DB_DATABASE=:memory: app composer test
+```
+
+Run the quality checks (Rector dry run and ECS), which CI runs too:
+
+```bash
+docker compose run --rm --build --no-deps app composer check
 ```
 
 Postman collection: `postman/Employee_Management_API.postman_collection.json` and `postman/Employee_Management_Environment.postman_environment.json`.
+
+CI (`.github/workflows/ci.yml`) runs the jobs `checks` (`composer validate`, `composer audit`, `docker compose config`), `quality`, `tests` (PHP 8.4, plus a non-blocking PHP 8.5 run), `outdated` and `smoke` (builds the image and replays the requests from Usage). Optional pre-commit hooks that run Rector, ECS and `swiss-knife breakpoint` in Docker: `lefthook install`.
 
 ## Override
 
@@ -69,24 +104,6 @@ docker compose up --build -d --wait
 docker compose down -v --rmi local --remove-orphans
 rm -f compose.override.yml
 ```
-
-## Key Endpoints
-
-### Public
-- `GET /api/employees` - List employees (with filtering, sorting, pagination)
-
-### Authentication
-- `POST /api/auth/login` - Login
-- `POST /api/auth/forgot-password` - Request password reset
-- `POST /api/auth/reset-password` - Reset password
-
-### Protected (require Bearer token)
-- `POST /api/employees` - Create employee
-- `GET /api/employees/{id}` - Get employee details
-- `PUT /api/employees/{id}` - Update employee
-- `DELETE /api/employees/{id}` - Delete employee
-- `DELETE /api/employees/bulk` - Bulk delete
-- `GET /api/me` - Current user info
 
 ## License
 
