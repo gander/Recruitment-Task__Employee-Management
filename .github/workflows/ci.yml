@@ -89,6 +89,9 @@ jobs:
           curl -sf http://localhost:8080/api/me -H "Authorization: Bearer $TOKEN" | grep -q active@example.com
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{"email": "inactive@example.com", "password": "password123"}')" = 401
           curl -sf http://localhost:8080/docs > /dev/null
+      - name: Framework lint
+        run: |
+          docker compose exec -T app php artisan config:cache
       - if: failure()
         run: docker compose logs
       - if: always()
