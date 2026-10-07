@@ -16,6 +16,7 @@ return RectorConfig::configure()
         __DIR__ . '/bootstrap/cache',
         __DIR__ . '/storage',
     ])
+    ->withComposerBased(phpunit: true)
     ->withTypeCoverageLevel(0)
     ->withDeadCodeLevel(0)
     ->withCodeQualityLevel(0);
