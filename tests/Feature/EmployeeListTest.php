@@ -52,6 +52,29 @@ class EmployeeListTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
+    public function it_can_filter_employees_by_full_name_with_non_ascii_letters()
+    {
+        Employee::factory()->create(['full_name' => 'Zażółć Gęślą']);
+        Employee::factory()->create(['full_name' => 'Anna Smith']);
+
+        $response = $this->getJson('/api/employees?filter[full_name]=' . rawurlencode('Zażółć'));
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.full_name', 'Zażółć Gęślą');
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function it_matches_full_name_case_insensitively_for_ascii_letters()
+    {
+        Employee::factory()->create(['full_name' => 'John Doe']);
+
+        $this->getJson('/api/employees?filter[full_name]=jOHN')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_can_filter_employees_by_email()
     {
         Employee::factory()->create(['email' => 'john@example.com']);
