@@ -5,6 +5,13 @@ on:
     branches: [master]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   checks:
     runs-on: ubuntu-latest
@@ -14,7 +21,7 @@ jobs:
         with:
           php-version: '8.4'
           tools: composer:v2
-      - run: composer validate --strict
+      - run: composer validate --strict --no-check-publish
       - run: composer audit
         continue-on-error: true
       - run: docker compose config -q
@@ -27,29 +34,33 @@ jobs:
         with:
           php-version: '8.4'
           tools: composer:v2
-      - run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+      - uses: ramsey/composer-install@v3
+        with:
+          composer-options: --no-scripts
       - run: composer check
 
   tests:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4']
+        experimental: [false]
+        include:
+          - php: '8.5'
+            experimental: true
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: ${{ matrix.php }}
           extensions: pdo, sqlite, pdo_sqlite
           tools: composer:v2
-      - name: Install dependencies
-        run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist
-      - name: Prepare environment
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-      - name: Run tests
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ':memory:'
-        run: php artisan test
+      - uses: ramsey/composer-install@v3
+        with:
+          composer-options: --no-scripts
+      - run: composer test
 
   outdated:
     runs-on: ubuntu-latest
@@ -60,5 +71,24 @@ jobs:
         with:
           php-version: '8.4'
           tools: composer:v2
-      - run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+      - uses: ramsey/composer-install@v3
+        with:
+          composer-options: --no-scripts
       - run: vendor/bin/swiss-knife breakpoint
+
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker compose up --build -d --wait
+      - name: README flow
+        run: |
+          curl --retry 30 --retry-all-errors --retry-delay 2 -sf http://localhost:8080/api/employees > /dev/null
+          TOKEN=$(curl -sf -X POST http://localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{"email": "active@example.com", "password": "password123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')
+          curl -sf http://localhost:8080/api/me -H "Authorization: Bearer $TOKEN" | grep -q active@example.com
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{"email": "inactive@example.com", "password": "password123"}')" = 401
+          curl -sf http://localhost:8080/docs > /dev/null
+      - if: failure()
+        run: docker compose logs
+      - if: always()
+        run: docker compose down -v
