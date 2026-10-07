@@ -11,13 +11,13 @@ class RequestsTest extends TestCase
 {
     public function test_requests_are_always_authorized(): void
     {
-        $this->assertTrue((new LoginRequest)->authorize());
-        $this->assertTrue((new BulkDeleteEmployeesRequest)->authorize());
+        $this->assertTrue((new LoginRequest())->authorize());
+        $this->assertTrue((new BulkDeleteEmployeesRequest())->authorize());
     }
 
     public function test_login_request_validates_email_and_password(): void
     {
-        $request = new LoginRequest;
+        $request = new LoginRequest();
         $validate = fn (array $data) => Validator::make($data, $request->rules(), $request->messages());
 
         $this->assertTrue($validate(['email' => 'a@example.com', 'password' => 'secret'])->passes());
@@ -32,8 +32,8 @@ class RequestsTest extends TestCase
     public function test_bulk_delete_request_rules(): void
     {
         // 'exists' needs a DB, so only the structural rules are exercised here.
-        $rules = collect((new BulkDeleteEmployeesRequest)->rules())
-            ->map(fn (array $r) => array_values(array_filter($r, fn ($x) => ! str_starts_with($x, 'exists'))))
+        $rules = collect((new BulkDeleteEmployeesRequest())->rules())
+            ->map(fn (array $r) => array_values(array_filter($r, fn ($x) => !str_starts_with($x, 'exists'))))
             ->all();
         $validate = fn (array $data) => Validator::make($data, $rules);
 
