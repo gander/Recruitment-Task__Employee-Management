@@ -8,12 +8,13 @@ services:
         COPY --from=ghcr.io/mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
         COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
         RUN apk add --no-cache git unzip \
-            && install-php-extensions pdo_mysql zip bcmath
+            && install-php-extensions zip bcmath
         WORKDIR /app
         COPY . .
         RUN composer install --no-interaction --no-progress
     command: >
-      sh -c "php artisan migrate:fresh --seed --force
+      sh -c "touch database/database.sqlite
+      && php artisan migrate:fresh --seed --force
       && php artisan scribe:generate
       && php artisan serve --host=0.0.0.0 --port=8080"
     environment:
@@ -22,33 +23,7 @@ services:
       APP_KEY: "base64:Ad2gbAK7fkpRX4HnDF2S5oB+st9nVeKxOoKEWyB6acw="
       APP_DEBUG: "true"
       APP_URL: http://localhost:8080
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: primeo
-      DB_USERNAME: primeo
-      DB_PASSWORD: primeo
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /app/database/database.sqlite
     ports:
       - '8080:8080'
-    depends_on:
-      mysql:
-        condition: service_healthy
-
-  mysql:
-    container_name: recruitment-task-primeo-db
-    image: mysql:26.7
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: primeo
-      MYSQL_USER: primeo
-      MYSQL_PASSWORD: primeo
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
-volumes:
-  mysql_data:
