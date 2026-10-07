@@ -65,18 +65,18 @@ class EmployeeController extends Controller
     public function index()
     {
         return QueryBuilder::for(Employee::class)
-            ->allowedFilters([
+            ->allowedFilters(
                 'full_name',
                 'email',
                 'position',
                 'is_active'
-            ])
-            ->allowedSorts([
+            )
+            ->allowedSorts(
                 'full_name',
                 'email',
                 'position',
                 'created_at'
-            ])
+            )
             ->select([
                 'id',
                 'full_name',
