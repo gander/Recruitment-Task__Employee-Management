@@ -44,7 +44,7 @@ class EmployeeTest extends TestCase
 
     public function test_rules_cover_every_fillable_attribute_except_password(): void
     {
-        $fillable = array_diff((new Employee)->getFillable(), ['password']);
+        $fillable = array_diff((new Employee())->getFillable(), ['password']);
 
         $this->assertEqualsCanonicalizing($fillable, array_keys(Employee::rules()));
     }
