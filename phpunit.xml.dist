@@ -3,6 +3,9 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         failOnDeprecation="true"
+         failOnNotice="true"
+         failOnWarning="true"
 >
     <testsuites>
         <testsuite name="Unit">
@@ -12,7 +15,11 @@
             <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>
-    <source>
+    <source ignoreSuppressionOfDeprecations="true"
+            ignoreIndirectDeprecations="true"
+            restrictNotices="true"
+            restrictWarnings="true"
+    >
         <include>
             <directory>app</directory>
         </include>
