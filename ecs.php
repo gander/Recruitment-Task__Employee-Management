@@ -29,6 +29,7 @@ return ECSConfig::configure()
         __DIR__ . '/vendor',
         '*/migrations/*',
     ])
+    ->withPreparedSets(psr12: true)
     ->withRules([
         ArraySyntaxFixer::class,
         NoUnusedImportsFixer::class,
